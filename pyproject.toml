@@ -1,0 +1,30 @@
+[project]
+name = "coffee-images"
+version = "0.1.0"
+description = "Project to try to segment coffee pot images from FK guildroom kahvibot"
+authors = [
+    {name = "konsta.kiirikki@aalto.fi"}
+]
+readme = "README.md"
+requires-python = ">=3.11,<3.14"
+
+[tool.poetry]
+[tool.poetry.dependencies]
+tqdm = ">=4.67.1,<5.0.0"
+telethon = ">=1.41.2,<2.0.0"
+opencv-python = ">=4.12.0.88,<5.0.0.0"
+matplotlib = ">=3.6.0,<3.11.0"
+
+torch = "^2.8.0"
+torchvision = "^0.23.0"
+python-dotenv = "^1.1.1"
+
+
+[tool.poetry.scripts]
+images = "coffee_images.data_collection.image_scraper:main"
+label = "coffee_images.preprocessing.masking_workflow:main"
+test_label = "coffee_images.preprocessing.masking_test:main"
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"
