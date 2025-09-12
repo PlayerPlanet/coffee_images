@@ -23,7 +23,7 @@ def main(batch_size: int, datadir: str, learning_rate: int = 1e-3, epochs: int =
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--batch_size', type=int, default=8, help='batch_size')
-    parser.add_argument('--learning_rate', type=int, default=0.001, help='learning rate')
+    parser.add_argument('--learning_rate', type=float, default=0.001, help='learning rate')
     parser.add_argument('--epochs', type=int, default=10, help='epochs')
     parser.add_argument('--data_dir', type=str, default="coffee_images/training", help='')
 
