@@ -2,7 +2,7 @@ import os
 import cv2
 import numpy as np
 import torch
-from torch.utils.data import Dataset
+from torch.utils.data import dataset
 
 class CoffeeDataset(Dataset):
     """
@@ -26,13 +26,17 @@ class CoffeeDataset(Dataset):
     def __getitem__(self, idx):
         img_name = self.list_img[idx]
         img_path = os.path.join(self.features_dir, img_name)
-        mask_path = os.path.join(self.labels_dir, img_name + '_mask')
+        mask_path = os.path.join(self.labels_dir, "mask_" + img_name)
         image = cv2.imread(img_path)
         mask = cv2.imread(mask_path, cv2.IMREAD_GRAYSCALE)
         if image is None or mask is None:
+            print(mask_path)
             raise FileNotFoundError(f"Image or mask not found for {img_name}")
+        target_size = (640, 480)  # (width, height)
+        image = cv2.resize(image, target_size, interpolation=cv2.INTER_LINEAR)
+        mask = cv2.resize(mask, target_size, interpolation=cv2.INTER_NEAREST)
         # Optionally convert mask to one-hot if needed (binary: 0=background, 1=object)
-        mask = (mask > 127).astype(np.uint8)  # Simple threshold
+        mask = (mask > 127).astype(np.uint8)
         if self.transform:
             image = self.transform(image)
             mask = torch.from_numpy(mask).long()
@@ -65,4 +69,4 @@ def generate_features_and_labels(masks_dir, raw_img_dir, datadir, n=None):
         os.makedirs(f'{datadir}/features/', exist_ok=True)
         cv2.imwrite(f'{datadir}/features/{orig_file}', img)
         os.makedirs(f'{datadir}/labels/', exist_ok=True)
-        cv2.imwrite(f'{datadir}/labels/{orig_file}_mask', mask)
+        cv2.imwrite(f'{datadir}/labels/{mask_file}', mask)

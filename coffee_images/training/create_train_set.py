@@ -41,7 +41,7 @@ def main(n: int = None, datadir = None):
         os.makedirs(f'{datadir}/features/', exist_ok=True)
         cv2.imwrite(f'{datadir}/features/{orig_file}', img)
         os.makedirs(f'{datadir}/labels/', exist_ok=True)
-        cv2.imwrite(f'{datadir}/labels/{orig_file}_mask', mask)
+        cv2.imwrite(f'{datadir}/labels/{mask_file}', mask)
         
 
 if __name__ == '__main__':

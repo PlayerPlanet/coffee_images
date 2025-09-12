@@ -3,7 +3,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import os
-
+from tqdm import tqdm
 
 class SegNet(nn.Module):
 
@@ -207,7 +207,7 @@ class Train():
             print(f'Epoch {i}:')
             sum_loss = 0.0
             num_batches = 0
-            for j, data in enumerate(trainloader, 1):
+            for j, data in enumerate(tqdm(trainloader, desc=f"Epoch {epoch+1}/{epochs}"), 1):
                 images, labels = data
                 optimizer.zero_grad()
                 output = model(images)

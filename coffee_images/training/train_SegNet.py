@@ -7,7 +7,7 @@ from coffee import CoffeeDataset
 import argparse
 
 def main(n: int):
-    datadir = os.path.join(os.getcwd(), 'data')  # Change to your data directory
+    datadir = 'coffee_images/training'  # Change to your data directory
     transform = transforms.Compose([
         transforms.ToTensor()
     ])
