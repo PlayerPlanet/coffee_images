@@ -211,6 +211,8 @@ class Train():
             num_batches = 0
             for j, data in enumerate(tqdm(trainloader, desc=f"Epoch {epoch+1}/{epochs}"), 1):
                 images, labels = data
+                images = images.to(device)
+                labels = labels.to(device)
                 optimizer.zero_grad()
                 output = model(images)
                 loss = loss_fn(output, labels)
