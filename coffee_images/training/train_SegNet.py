@@ -6,7 +6,7 @@ import numpy as np
 from coffee import CoffeeDataset
 import argparse
 
-def main(batch_size: int, datadir: str, learning_rate: int = 1e-3, epochs: int = 8):
+def main(batch_size: int, datadir: str, learning_rate: float = 1e-3, epochs: int = 8):
       # Change to your data directory
     transform = transforms.Compose([
         transforms.ToTensor()
