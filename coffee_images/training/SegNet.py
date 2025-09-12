@@ -185,6 +185,8 @@ class Train():
         """
         if model is None:
             model = SegNet()
+        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        model = model.to(device)
         loss_fn = nn.CrossEntropyLoss()
 
         if path is None:
