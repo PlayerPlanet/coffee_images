@@ -34,7 +34,50 @@ def open_images(image_dir: str, n: int = None):
         img = cv2.imread(file_path)
         img_tensor = torch.tensor(img, dtype=torch.float32) / 255.0  # Convert to float32 and normalize
         images.append(img_tensor)
-    return images
+    return images, fnames
+
+def save_predictions(masks: list, output_dir: str = "pred_masks"):
+    """expects a list of tuples (name: str, mask: torch.Tensor)"""
+    if not os.path.exists(output_dir):
+        print(f"path doesn't exist")
+        os.mkdir(output_dir)
+
+    for name, mask in masks:
+        mask = mask.squeeze().cpu().numpy()
+        file_path = os.path.join(output_dir, "mask_"+name)
+        if mask.ndim > 2:
+            mask = mask[0]  # take first channel if needed
+        # Convert mask to uint8
+        mask = (mask > 0.5).astype('uint8') * 255
+        cv2.imwrite(file_path, mask)
+
+def compute_masked_images(imgs: list, output_dir: str = "masked_images"):
+    """expects a list of tuples (name: str, img: cv2.MatLike, mask: torch.Tensor)"""
+    if not os.path.exists(output_dir):
+        print(f"path doesn't exist")
+        os.mkdir(output_dir)
+    
+    for name, img, mask in imgs:
+        file_path = os.path.join(output_dir, "masked_"+name)
+        mask = mask.squeeze().cpu().numpy()
+        # Ensure mask is 2D
+        if mask.ndim > 2:
+            mask = mask[0]  # take first channel if needed
+        mask = (mask > 0.5).astype('uint8') * 255
+        # Convert img to numpy uint8 if it's a tensor
+        if isinstance(img, torch.Tensor):
+            img = (img.cpu().numpy() * 255).astype('uint8')
+        # Resize if needed
+        if img.shape[:2] != mask.shape:
+            mask = cv2.resize(mask, (img.shape[1], img.shape[0]), interpolation=cv2.INTER_NEAREST)
+        # Apply mask (show masked area only)
+        masked_img = cv2.bitwise_and(img, img, mask=mask)
+        try:
+            cv2.imwrite(file_path, masked_img)
+        except Exception as e:
+            print(e)
+
+
 
 def plot_mask(img, mask: torch.Tensor):
     mask = mask.squeeze().cpu().numpy()

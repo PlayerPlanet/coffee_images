@@ -1,6 +1,6 @@
 import torch
 import argparse
-from coffee_images.inference.tools import load_model, inference, open_images, plot_mask
+from coffee_images.inference.tools import load_model, inference, open_images, save_predictions, compute_masked_images
 
 def main():
     return 
@@ -12,10 +12,13 @@ if __name__=="__main__":
     parser.add_argument('--n_img', type=int, default=1)
     args = parser.parse_args()
     model = load_model(path=args.model_dir)
-    images = open_images(image_dir=args.image_dir, n=args.n_img)
+    images, fnames = open_images(image_dir=args.image_dir, n=args.n_img)
     masks = []
     for img in images:
         mask = inference(image=img, model=model)
         masks.append(mask)
-    for img, mask in zip(images, masks):
-        plot_mask(img=img, mask=mask)
+    named_masks = zip(fnames, masks)
+    save_predictions(named_masks)
+    imgs = list(zip(fnames, images, masks))
+    compute_masked_images(imgs)
+    
