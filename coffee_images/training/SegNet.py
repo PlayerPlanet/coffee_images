@@ -187,7 +187,8 @@ class Train():
             model = SegNet()
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         model = model.to(device)
-        loss_fn = nn.CrossEntropyLoss()
+        weights = torch.tensor([1.0, 10.0]).to(device)  # Example: background=1, foreground=10
+        loss_fn = torch.nn.CrossEntropyLoss(weight=weights)
 
         if path is None:
             epoch = 0

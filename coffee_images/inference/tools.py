@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 
 def load_model(path):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    model = SegNet()
+    model = SegNet(out_chn=2)
     checkpoint = torch.load(path, map_location=device, weights_only=True)
     model.load_state_dict(checkpoint["state_dict"])
     model.eval()
@@ -17,9 +17,9 @@ def inference(image: torch.Tensor, model: SegNet):
     image = image.permute(2,0,1)  # (H, W, C) -> (C, H, W)
     image = image.unsqueeze(0)     # (C, H, W) -> (1, C, H, W)
     image = image.to(device)
-
+    output = model(image)
     with torch.no_grad():
-        return model(image)
+        return output.argmax(dim=1)
     
 def open_images(image_dir: str, n: int = None):
     fnames =  [f for f in os.listdir(image_dir) if f.endswith('.jpg') or f.endswith('.png')]
