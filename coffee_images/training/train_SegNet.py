@@ -20,7 +20,7 @@ def main(batch_size: int, datadir: str, learning_rate: float = 1e-3, epochs: int
     valloader = torch.utils.data.DataLoader(valset, batch_size=batch_size, shuffle=False, num_workers=2)
 
     # Import your SegNet model here
-    model = SegNet()
+    model = SegNet(out_chn=2)
     optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
     # Pass checkpoint_path if provided
     Train.Train(trainloader=trainloader, epochs=epochs, optimizer=optimizer, model=model, path=checkpoint)
