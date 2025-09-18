@@ -19,6 +19,7 @@ def main():
     parser.add_argument('--batch_size', type=int, default=8, help="Batch size for inference")
     parser.add_argument('--save_interval', type=int, default=100, help="Save results every N images")
     parser.add_argument('--num_workers', type=int, default=20, help="Number of CPU cores to use")
+    parser.add_argument('--target_size', type=int, nargs=2, default=None, help="Target size [height, width] for resizing images to uniform dimensions")
     args = parser.parse_args()
     
     # Set torch threads for CPU optimization
@@ -37,6 +38,10 @@ def main():
     
     print(f"Found {len(all_filenames)} images to process")
     print(f"Processing in batches of {args.batch_size} with streaming approach")
+    if args.target_size:
+        print(f"Target image size: {args.target_size[0]}x{args.target_size[1]}")
+    else:
+        print("No resizing applied - images must have uniform dimensions")
     
     # Memory monitoring
     def print_memory_usage():
@@ -60,7 +65,11 @@ def main():
             
             try:
                 # Load only current batch into memory
-                batch_images, valid_filenames = load_image_batch(args.image_dir, batch_filenames)
+                batch_images, valid_filenames = load_image_batch(
+                    args.image_dir, 
+                    batch_filenames, 
+                    target_size=tuple(args.target_size) if args.target_size else None
+                )
                 
                 if not batch_images:
                     pbar.update(len(batch_filenames))

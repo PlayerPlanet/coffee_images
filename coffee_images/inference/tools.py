@@ -1,9 +1,10 @@
 import torch
+import torch.nn.functional as F
 import os
 import cv2
 from coffee_images.training.SegNet import SegNet
 import matplotlib.pyplot as plt
-from typing import List, Tuple, Union
+from typing import List, Tuple, Union, Optional
 import numpy as np
 from concurrent.futures import ThreadPoolExecutor
 from tqdm import tqdm
@@ -61,8 +62,17 @@ def get_image_filenames(image_dir: str, n: int = None):
         fnames = fnames[:n]
     return fnames
 
-def load_single_image(image_dir: str, filename: str):
-    """Load a single image on demand"""
+def load_single_image(image_dir: str, filename: str, target_size: Optional[Tuple[int, int]] = None):
+    """Load a single image on demand with optional resizing
+    
+    Args:
+        image_dir: Directory containing the image
+        filename: Name of the image file
+        target_size: Optional tuple (height, width) for resizing
+    
+    Returns:
+        torch.Tensor: Image tensor with shape (H, W, C) or None if loading failed
+    """
     file_path = os.path.join(image_dir, filename)
     if not os.path.exists(file_path):
         print(f"Original image not found for: {file_path}")
@@ -72,19 +82,47 @@ def load_single_image(image_dir: str, filename: str):
         if img is None:
             print(f"Failed to load image: {file_path}")
             return None
+        
+        # Convert to tensor first
         img_tensor = torch.tensor(img, dtype=torch.float32) / 255.0
+        
+        # Resize if target_size is specified
+        if target_size is not None:
+            # Convert to CHW format for interpolation
+            img_tensor = img_tensor.permute(2, 0, 1)  # HWC -> CHW
+            # Add batch dimension
+            img_tensor = img_tensor.unsqueeze(0)  # CHW -> BCHW
+            # Resize using bilinear interpolation
+            img_tensor = F.interpolate(
+                img_tensor, 
+                size=target_size, 
+                mode='bilinear', 
+                align_corners=False
+            )
+            # Remove batch dimension and convert back to HWC
+            img_tensor = img_tensor.squeeze(0).permute(1, 2, 0)  # BCHW -> CHW -> HWC
+        
         return img_tensor
     except Exception as e:
         print(f"Error loading {file_path}: {e}")
         return None
 
-def load_image_batch(image_dir: str, filenames: List[str]):
-    """Load a batch of images efficiently"""
+def load_image_batch(image_dir: str, filenames: List[str], target_size: Optional[Tuple[int, int]] = None):
+    """Load a batch of images efficiently with optional uniform resizing
+    
+    Args:
+        image_dir: Directory containing images
+        filenames: List of image filenames to load
+        target_size: Optional tuple (height, width) for resizing all images to uniform size
+    
+    Returns:
+        Tuple[List[torch.Tensor], List[str]]: (loaded_images, valid_filenames)
+    """
     images = []
     valid_filenames = []
     
     for filename in filenames:
-        img = load_single_image(image_dir, filename)
+        img = load_single_image(image_dir, filename, target_size)
         if img is not None:
             images.append(img)
             valid_filenames.append(filename)
