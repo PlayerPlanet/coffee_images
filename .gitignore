@@ -5,6 +5,8 @@ __pycache__
 *.pkl
 raw_img
 manual_masks
+masked_images
+pred_masks
 coffee_images/training/features
 coffee_images/training/labels
 poetry.lock
