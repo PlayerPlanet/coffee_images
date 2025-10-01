@@ -169,25 +169,27 @@ def compute_masked_images(imgs: List[Tuple[str, torch.Tensor, torch.Tensor]], ou
         try:
             file_path = os.path.join(output_dir, "masked_" + name)
             mask_np = mask.squeeze().cpu().numpy()
-            
             # Ensure mask is 2D
             if mask_np.ndim > 2:
                 mask_np = mask_np[0]  # take first channel if needed
-            mask_np = (mask_np > 0.5).astype('uint8') * 255
-            
+            mask_bin = (mask_np > 0.5).astype('uint8')
             # Convert img to numpy uint8 if it's a tensor
             if isinstance(img, torch.Tensor):
                 img_np = (img.cpu().numpy() * 255).astype('uint8')
             else:
                 img_np = img
-            
             # Resize if needed
-            if img_np.shape[:2] != mask_np.shape:
-                mask_np = cv2.resize(mask_np, (img_np.shape[1], img_np.shape[0]), 
-                                   interpolation=cv2.INTER_NEAREST)
-            
-            # Apply mask
-            masked_img = cv2.bitwise_and(img_np, img_np, mask=mask_np)
+            if img_np.shape[:2] != mask_bin.shape:
+                mask_bin = cv2.resize(mask_bin, (img_np.shape[1], img_np.shape[0]), interpolation=cv2.INTER_NEAREST)
+            # Generate Gaussian noise for masked regions
+            noise = np.random.normal(loc=127, scale=40, size=img_np.shape).astype('uint8')
+            # Combine image and noise using mask
+            masked_img = img_np.copy()
+            if img_np.ndim == 3:
+                for c in range(img_np.shape[2]):
+                    masked_img[..., c] = np.where(mask_bin == 1, noise[..., c], img_np[..., c])
+            else:
+                masked_img = np.where(mask_bin == 1, noise, img_np)
             cv2.imwrite(file_path, masked_img)
             return True
         except Exception as e:
