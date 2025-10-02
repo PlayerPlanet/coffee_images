@@ -187,7 +187,7 @@ def compute_masked_images(imgs: List[Tuple[str, torch.Tensor, torch.Tensor]], ou
             masked_img = img_np.copy()
             if img_np.ndim == 3:
                 for c in range(img_np.shape[2]):
-                    masked_img[..., c] = np.where(mask_bin == 1, noise[..., c], img_np[..., c])
+                    masked_img[..., c] = np.where(mask_bin == 0, noise[..., c], img_np[..., c])
             else:
                 masked_img = np.where(mask_bin == 1, noise, img_np)
             cv2.imwrite(file_path, masked_img)
