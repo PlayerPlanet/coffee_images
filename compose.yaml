@@ -8,8 +8,9 @@ services:
       # Telegram API credentials (loaded from .env file)
       - api_id=${API_ID}
       - api_hash=${API_HASH}
-      
-      # Bot configuration
+            # Bot token (optional - for simpler authentication without phone)
+      - BOT_TOKEN=${BOT_TOKEN:-}
+            # Bot configuration
       - BOT_USERNAME=${BOT_USERNAME:-@TsufeBot}
       
       # Polling interval in seconds (default: 300 = 5 minutes)

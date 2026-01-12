@@ -34,6 +34,7 @@ dotenv.load_dotenv()
 # Configuration
 API_ID = os.getenv("api_id")
 API_HASH = os.getenv("api_hash")
+BOT_TOKEN = os.getenv("BOT_TOKEN")  # Bot token for bot authentication (alternative to user auth)
 BOT_USERNAME = os.getenv("BOT_USERNAME", "@StufeBot")
 POLL_INTERVAL_SECONDS = int(os.getenv("POLL_INTERVAL_SECONDS", "300"))  # Default 5 minutes
 DATA_DIR = Path(os.getenv("DATA_DIR", "data"))
@@ -122,18 +123,36 @@ class CoffeeBotPoller:
     """Polls @StufeBot for coffee pot images"""
     
     def __init__(self):
-        if not API_ID or not API_HASH:
-            raise ValueError("api_id and api_hash must be set in .env file")
+        # Check authentication method
+        self.use_bot_token = bool(BOT_TOKEN)
         
-        # Ensure session directory exists
-        SESSION_DIR.mkdir(parents=True, exist_ok=True)
+        if self.use_bot_token:
+            logger.info("Using bot token authentication")
+            # Bot token authentication - simpler, no interactive auth needed
+            if not API_ID or not API_HASH:
+                raise ValueError("api_id and api_hash must be set in .env file")
+            
+            SESSION_DIR.mkdir(parents=True, exist_ok=True)
+            self.session_file = SESSION_DIR / 'bot_token_session.session'
+            self.client = TelegramClient(
+                str(SESSION_DIR / 'bot_token_session'),
+                API_ID,
+                API_HASH
+            )
+        else:
+            logger.info("Using user authentication")
+            # User authentication - requires interactive phone auth
+            if not API_ID or not API_HASH:
+                raise ValueError("api_id and api_hash must be set in .env file")
+            
+            SESSION_DIR.mkdir(parents=True, exist_ok=True)
+            self.session_file = SESSION_DIR / 'bot_poller_session.session'
+            self.client = TelegramClient(
+                str(SESSION_DIR / 'bot_poller_session'),
+                API_ID,
+                API_HASH
+            )
         
-        self.session_file = SESSION_DIR / 'bot_poller_session.session'
-        self.client = TelegramClient(
-            str(SESSION_DIR / 'bot_poller_session'),
-            API_ID,
-            API_HASH
-        )
         self.metadata_manager = MetadataManager(METADATA_FILE)
         IMAGES_DIR.mkdir(parents=True, exist_ok=True)
     
@@ -220,8 +239,8 @@ class CoffeeBotPoller:
         logger.info(f"Images directory: {IMAGES_DIR}")
         logger.info(f"Metadata file: {METADATA_FILE}")
         
-        # Check if session exists
-        if not self.check_session_exists():
+        # Check if session exists (only for user auth, not needed for bot token)
+        if not self.use_bot_token and not self.check_session_exists():
             logger.error("="*60)
             logger.error("AUTHENTICATION REQUIRED")
             logger.error("No Telegram session found. You must authenticate first.")
@@ -231,11 +250,18 @@ class CoffeeBotPoller:
             logger.error("")
             logger.error("Then start the service normally:")
             logger.error("  docker compose up -d")
+            logger.error("")
+            logger.error("Or use bot token authentication (set BOT_TOKEN in .env)")
             logger.error("="*60)
             raise RuntimeError("Authentication required - no session file found")
         
-        await self.client.start()
-        logger.info("Telegram client connected")
+        # Start client with appropriate authentication
+        if self.use_bot_token:
+            await self.client.start(bot_token=BOT_TOKEN)
+            logger.info("Telegram client connected using bot token")
+        else:
+            await self.client.start()
+            logger.info("Telegram client connected using user authentication")
         
         # Load existing metadata
         metadata = self.metadata_manager.load()
