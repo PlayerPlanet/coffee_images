@@ -18,6 +18,10 @@ services:
       # Response timeout in seconds (default: 30)
       - RESPONSE_TIMEOUT=${RESPONSE_TIMEOUT:-30}
       
+      # Polling hours - local time, 24-hour format (default: 8 AM to 6 PM)
+      - POLL_START_HOUR=${POLL_START_HOUR:-8}
+      - POLL_END_HOUR=${POLL_END_HOUR:-18}
+      
       # Paths (defaults are fine for Docker setup)
       - DATA_DIR=/app/data
       - SESSION_DIR=/app/.telethon

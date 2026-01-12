@@ -41,9 +41,34 @@ IMAGES_DIR = DATA_DIR / "raw_img"
 METADATA_FILE = DATA_DIR / "image_metadata.json"
 SESSION_DIR = Path(os.getenv("SESSION_DIR", ".telethon"))
 RESPONSE_TIMEOUT = int(os.getenv("RESPONSE_TIMEOUT", "30"))  # 30 seconds for bot to respond
+POLL_START_HOUR = int(os.getenv("POLL_START_HOUR", "8"))  # Start polling at 8:00 AM
+POLL_END_HOUR = int(os.getenv("POLL_END_HOUR", "18"))  # Stop polling at 6:00 PM
 
 # Global flag for graceful shutdown
 shutdown_flag = False
+
+
+def is_within_polling_hours() -> bool:
+    """Check if current local time is within configured polling hours"""
+    now = datetime.now()
+    current_hour = now.hour
+    return POLL_START_HOUR <= current_hour < POLL_END_HOUR
+
+
+def seconds_until_next_poll_window() -> int:
+    """Calculate seconds until the next polling window starts"""
+    now = datetime.now()
+    current_hour = now.hour
+    
+    if current_hour < POLL_START_HOUR:
+        # Before polling hours - wait until start
+        target = now.replace(hour=POLL_START_HOUR, minute=0, second=0, microsecond=0)
+        return int((target - now).total_seconds())
+    else:
+        # After polling hours - wait until next day's start
+        next_day = now.replace(hour=POLL_START_HOUR, minute=0, second=0, microsecond=0)
+        next_day = next_day.replace(day=now.day + 1)
+        return int((next_day - now).total_seconds())
 
 
 class MetadataManager:
@@ -215,9 +240,28 @@ class CoffeeBotPoller:
         # Load existing metadata
         metadata = self.metadata_manager.load()
         logger.info(f"Loaded metadata: {metadata['total_images_collected']} images collected so far")
+        logger.info(f"Polling hours: {POLL_START_HOUR:02d}:00 - {POLL_END_HOUR:02d}:00 (local time)")
         
         poll_count = 0
         while not shutdown_flag:
+            # Check if we're within polling hours
+            if not is_within_polling_hours():
+                wait_seconds = seconds_until_next_poll_window()
+                now = datetime.now()
+                logger.info(f"Outside polling hours (current time: {now.strftime('%H:%M:%S')})")
+                logger.info(f"Waiting {wait_seconds} seconds ({wait_seconds/3600:.1f} hours) until next poll window")
+                
+                # Sleep in smaller chunks to allow graceful shutdown
+                while wait_seconds > 0 and not shutdown_flag:
+                    sleep_time = min(60, wait_seconds)  # Check every minute
+                    await asyncio.sleep(sleep_time)
+                    wait_seconds -= sleep_time
+                
+                if shutdown_flag:
+                    break
+                
+                logger.info("Entering polling hours window")
+            
             poll_count += 1
             logger.info(f"=== Poll #{poll_count} ===")
             
