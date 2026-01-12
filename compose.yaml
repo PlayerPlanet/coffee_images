@@ -1,0 +1,38 @@
+services:
+  coffee-poller:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: coffee-bot-poller
+    environment:
+      # Telegram API credentials (loaded from .env file)
+      - api_id=${API_ID}
+      - api_hash=${API_HASH}
+      
+      # Bot configuration
+      - BOT_USERNAME=${BOT_USERNAME:-@StufeBot}
+      
+      # Polling interval in seconds (default: 300 = 5 minutes)
+      - POLL_INTERVAL_SECONDS=${POLL_INTERVAL_SECONDS:-300}
+      
+      # Response timeout in seconds (default: 30)
+      - RESPONSE_TIMEOUT=${RESPONSE_TIMEOUT:-30}
+      
+      # Paths (defaults are fine for Docker setup)
+      - DATA_DIR=/app/data
+      - SESSION_DIR=/app/.telethon
+    
+    volumes:
+      # Persist collected images and metadata
+      - ./data:/app/data
+      
+      # Persist Telegram session to avoid re-authentication
+      - ./.telethon:/app/.telethon
+    
+    restart: unless-stopped
+    
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"

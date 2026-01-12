@@ -10,3 +10,7 @@ pred_masks
 coffee_images/training/features
 coffee_images/training/labels
 poetry.lock
+
+# Docker automation data
+data/
+.telethon/
