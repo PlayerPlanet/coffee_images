@@ -103,6 +103,7 @@ class CoffeeBotPoller:
         # Ensure session directory exists
         SESSION_DIR.mkdir(parents=True, exist_ok=True)
         
+        self.session_file = SESSION_DIR / 'bot_poller_session.session'
         self.client = TelegramClient(
             str(SESSION_DIR / 'bot_poller_session'),
             API_ID,
@@ -110,6 +111,10 @@ class CoffeeBotPoller:
         )
         self.metadata_manager = MetadataManager(METADATA_FILE)
         IMAGES_DIR.mkdir(parents=True, exist_ok=True)
+    
+    def check_session_exists(self) -> bool:
+        """Check if Telegram session file exists"""
+        return self.session_file.exists()
     
     async def request_status(self) -> Optional[dict]:
         """
@@ -189,6 +194,20 @@ class CoffeeBotPoller:
         logger.info(f"Poll interval: {POLL_INTERVAL_SECONDS} seconds")
         logger.info(f"Images directory: {IMAGES_DIR}")
         logger.info(f"Metadata file: {METADATA_FILE}")
+        
+        # Check if session exists
+        if not self.check_session_exists():
+            logger.error("="*60)
+            logger.error("AUTHENTICATION REQUIRED")
+            logger.error("No Telegram session found. You must authenticate first.")
+            logger.error("")
+            logger.error("Run this command to authenticate interactively:")
+            logger.error("  docker compose run --rm coffee-poller")
+            logger.error("")
+            logger.error("Then start the service normally:")
+            logger.error("  docker compose up -d")
+            logger.error("="*60)
+            raise RuntimeError("Authentication required - no session file found")
         
         await self.client.start()
         logger.info("Telegram client connected")
