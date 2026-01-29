@@ -12,7 +12,7 @@ import logging
 import os
 import signal
 import sys
-from datetime import datetime, timezone
+from datetime import datetime
 from pathlib import Path
 from typing import Optional
 
@@ -108,14 +108,14 @@ class MetadataManager:
         data = self.load()
         data["images"].append(image_entry)
         data["total_images_collected"] = len(data["images"])
-        data["last_poll_time"] = datetime.now(timezone.utc).isoformat()
+        data["last_poll_time"] = datetime.now().isoformat()
         self._atomic_write(data)
         logger.info(f"Added image to metadata: {image_entry['filename']}")
     
     def update_last_poll(self):
         """Update last poll time without adding an image"""
         data = self.load()
-        data["last_poll_time"] = datetime.now(timezone.utc).isoformat()
+        data["last_poll_time"] = datetime.now().isoformat()
         self._atomic_write(data)
 
 
@@ -181,7 +181,7 @@ class CoffeeBotPoller:
                     return None
                 
                 # Generate filename with timestamp
-                timestamp = datetime.now(timezone.utc)
+                timestamp = datetime.now()
                 filename = f"coffee_{timestamp.strftime('%Y-%m-%d_%H-%M-%S')}.jpg"
                 file_path = IMAGES_DIR / filename
                 
